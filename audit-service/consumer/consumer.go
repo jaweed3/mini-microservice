@@ -21,3 +21,59 @@ type AuditConsumer struct {
 func NewAuditConsumer(nc *nats.Conn, svc *repository.AuditService) *AuditConsumer {
 	return &AuditConsumer{nc: nc, service: svc}
 }
+
+func (c *AuditConsumer) Start(ctx context.Context) error {
+	js, err := jetstream.New(c.nc)
+	if err != nil {
+		return err
+	}
+
+	stream, err := js.Stream(ctx, "ORDERS")
+	if err != nil {
+		return nil
+	}
+
+	cons, err := stream.CreateOrUpdateConsumer(ctx, jetstream.ConsumerConfig{
+		Name:          "audit-consumer",
+		Durable:       "audit-consumer",
+		AckPolicy:     jetstream.AckExplicitPolicy,
+		FilterSubject: "order.created",
+		MaxDeliver:    5,
+	})
+	if err != nil {
+		return err
+	}
+
+	// kita consume dengan callback.
+	_, err = cons.Consume(func(msg jetstream.Msg) {
+		processCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+		defer cancel()
+
+		var evt contract.OrderEvent
+		if err := json.Unmarshal(msg.Data(), &evt); err != nil {
+			log.Printf("[request_id=%s] invalid message : %v", evt.RequestID, err)
+			msg.Term()
+			return
+		}
+
+		auditLog, err := c.service.InsertNewAuditLog(
+			processCtx,
+			evt.OrderID,
+			evt.RequestID,
+			evt.Name,
+			evt.Amount,
+			evt.Action,
+			evt.EventID,
+		)
+		if err != nil {
+			log.Printf("[request_id=%s] insert audit log failed : %v", evt.RequestID, err)
+			msg.Nak()
+			return
+		}
+
+		log.Printf("[request_id=%s] insert audit log success : %+v", evt.RequestID, auditLog)
+		msg.Ack()
+	})
+	return err
+}
