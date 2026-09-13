@@ -17,3 +17,7 @@ type AuditConsumer struct {
 	nc      *nats.Conn
 	service *repository.AuditService
 }
+
+func NewAuditConsumer(nc *nats.Conn, svc *repository.AuditService) *AuditConsumer {
+	return &AuditConsumer{nc: nc, service: svc}
+}
