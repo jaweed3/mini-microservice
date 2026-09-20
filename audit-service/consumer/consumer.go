@@ -30,21 +30,21 @@ func (c *AuditConsumer) Start(ctx context.Context) error {
 
 	stream, err := js.Stream(ctx, "ORDERS")
 	if err != nil {
-		return nil
+		return err
 	}
 
 	cons, err := stream.CreateOrUpdateConsumer(ctx, jetstream.ConsumerConfig{
 		Name:          "audit-consumer",
 		Durable:       "audit-consumer",
 		AckPolicy:     jetstream.AckExplicitPolicy,
-		FilterSubject: "order.created",
+		FilterSubject: "order.>",
 		MaxDeliver:    5,
 	})
 	if err != nil {
 		return err
 	}
 
-	// kita consume dengan callback.
+	// kita consume
 	_, err = cons.Consume(func(msg jetstream.Msg) {
 		processCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 
@@ -64,6 +64,7 @@ func (c *AuditConsumer) Start(ctx context.Context) error {
 			evt.Name,
 			evt.Amount,
 			evt.Action,
+			evt.Status,
 			evt.EventID,
 		)
 		if err != nil {
