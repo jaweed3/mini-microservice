@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment 
+metadata:
+  name: exporter
+  namespace: seblak
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: exporter
+  template:
+    metadata:
+      labels:
+        app: exporter
+    spec:
+      containers:
+      - name: exporter
+        image: exporter:local
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: NATS_URL
+          value: "nats://nats:4222"
+        - name: DB_PATH
+          value: "/data/order-exporter.db"
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: exporter-data
