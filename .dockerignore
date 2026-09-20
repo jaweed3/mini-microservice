@@ -1,0 +1,5 @@
+# .dockerignore
+order-service/order-service
+audit-service/audit-service
+order-exporter/order-exporter
+*.db

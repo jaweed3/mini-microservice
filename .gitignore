@@ -1,0 +1,13 @@
+# binaries (built per service dir)
+order-service/order-service
+audit-service/audit-service
+order-exporter/order-exporter
+order-cli/order-cli
+
+# sqlite (local dev + WAL sidecars)
+*.db
+*.db-wal
+*.db-shm
+
+# generated
+graphify-out/

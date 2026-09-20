@@ -1,0 +1,9 @@
+go 1.26.5
+
+use (
+	./order-cli
+	./order-exporter
+	./order-service
+	./contract/
+	./audit-service/
+)
