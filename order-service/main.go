@@ -169,12 +169,6 @@ func main() {
 		natsURL = nats.DefaultURL
 	}
 
-	nc, err := nats.Connect(natsURL)
-	if err != nil {
-		fmt.Printf("Error connecting to NATS: %v", err)
-	}
-	defer nc.Close()
-
 	// init database schema
 	if err := repository.InitDB(db); err != nil {
 		log.Fatal(err)
